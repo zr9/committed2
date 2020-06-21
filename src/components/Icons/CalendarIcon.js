@@ -11,6 +11,9 @@ const CalendarIconWrapper = styled.div`
   &:hover svg{
     fill: ${({hoverIconColor}) => hoverIconColor}
   }
+  &.hidden{
+    display: none;
+  }
   & svg {
     fill: ${({defaultIconColor}) => defaultIconColor}
   }

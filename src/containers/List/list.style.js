@@ -7,6 +7,9 @@ export const ListWrapper = styled.div`
 export const ListHeader = styled.div`
     display: flex;
     padding: 20px 0;
+    &.hidden{
+      display: none;
+    }
 `;
 
 export const ListNameWrapper = styled.span`

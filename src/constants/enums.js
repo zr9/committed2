@@ -10,3 +10,12 @@ export const STORAGE = Object.freeze({
     LOCAL: 'local',
     CHROME: 'chrome',
 });
+
+export const VERSION = Object.freeze({
+    EXTENDED: 'extended',
+    SIMPLE: 'simple',
+});
+
+export const DEFAULT = Object.freeze({
+    LIST_NAME: 'all-todos',
+});

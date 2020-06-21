@@ -3,6 +3,7 @@ import List from '../List';
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import { withStore } from '../../store';
 import NewListButton from '../../components/NewListButton';
+import {VERSION} from '../../constants/enums';
 
 // helper function
 const reorder = (array, startIndex, endIndex) => {
@@ -12,7 +13,7 @@ const reorder = (array, startIndex, endIndex) => {
     return result;
 };
 
-const ItemsContainer = ({ listOrder, lists, reorderItems, addList, theme }) => (
+const ItemsContainer = ({ listOrder, lists, reorderItems, addList, theme, version }) => (
     <DragDropContext
         onDragEnd={result => {
             const { source, destination } = result;
@@ -100,7 +101,7 @@ const ItemsContainer = ({ listOrder, lists, reorderItems, addList, theme }) => (
                 </div>
             )}
         </Droppable>
-        <NewListButton
+        <NewListButton className={version === VERSION.SIMPLE && 'hidden'}
             onClick={() => addList()}
             textColor={theme.icon.default}
         />

@@ -14,7 +14,7 @@ import {
 } from './side-menu.style';
 import Checkbox from './checkbox';
 import DevFoxIcon from '../../components/Icons/DevFoxIcon';
-import { FILTER_OPTIONS, STORAGE } from '../../constants/enums';
+import {FILTER_OPTIONS, STORAGE, VERSION} from '../../constants/enums';
 class SideMenu extends Component {
     constructor(props) {
         super(props);
@@ -37,7 +37,9 @@ class SideMenu extends Component {
             setTodoSettings,
             checkboxStyles,
             storage,
-            setStorage
+            setStorage,
+            version,
+            setVersion,
         } = this.props;
         const { customQuote, ...checkboxSettings } = clockSettings;
         const { hideCompleted, filterByDuedate } = todoSettings;
@@ -135,6 +137,18 @@ class SideMenu extends Component {
                     </CheckboxGroup>
 
                 </MenuItem>
+                <MenuLabel>Select Version</MenuLabel>
+                <Select
+                  value={version}
+                  onChange={e => setVersion(e.target.value)}
+                >
+                  <option value={VERSION.EXTENDED}>
+                    Extended - additional lists
+                  </option>
+                  <option value={VERSION.SIMPLE}>
+                    Simple - only one list
+                  </option>
+                </Select>
 
                 <MenuLabel>Set Storage</MenuLabel>
 

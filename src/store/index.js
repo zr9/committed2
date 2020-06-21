@@ -1,6 +1,6 @@
 import React, { Component, createContext } from 'react';
 import StorageFactory from '../utils/storage';
-import { FILTER_OPTIONS, STORAGE } from '../constants/enums';
+import {DEFAULT, FILTER_OPTIONS, STORAGE, VERSION} from '../constants/enums';
 import THEMES from '../constants/themes';
 
 export const StoreContext = createContext();
@@ -33,6 +33,9 @@ export class StoreProvider extends Component {
       filterByDuedate: FILTER_OPTIONS.SHOW_ALL
     },
     storage: STORAGE.LOCAL,
+    version: VERSION.EXTENDED,
+
+    lastState: {}
   }
 
   //helpers
@@ -88,6 +91,23 @@ export class StoreProvider extends Component {
       const newSettings = { ...this.state.todoSettings, ...settingsObj };
       this.storage.set({ todoSettings: newSettings });
     },
+    setVersion: async (version) => {
+      const lastState = {...this.state, lastState: {}};
+      let listOrder = [];
+
+      if (version === VERSION.SIMPLE){
+        if (!lastState.listOrder.includes(DEFAULT.LIST_NAME)){
+          this.todosOperations.addList(DEFAULT.LIST_NAME);
+        }
+
+        listOrder = [DEFAULT.LIST_NAME];
+      }else {
+        listOrder = lastState.listOrder;
+      }
+
+      this.setState({version, lastState, listOrder});
+      this.storage.set({ version, lastState, listOrder });
+    },
     setStorage: async (storageName) => {
       if (storageName !== STORAGE.LOCAL && storageName !== STORAGE.CHROME) throw new Error('storage can only be local or chrome, but got:', storageName);
       if (this.storage && storageName === this.state.storage) return;
@@ -114,7 +134,8 @@ export class StoreProvider extends Component {
           'listOrder',
           'themeIndex',
           'clockSettings',
-          'todoSettings'
+          'todoSettings',
+          'version',
         )
       });
 
@@ -126,12 +147,16 @@ export class StoreProvider extends Component {
   }
 
   todosOperations = {
-    addTodo: (name = '', listId) => {
+    addTodo: async (name = '', listId, includeOrigin = false) => {
+      if(this.state.version === VERSION.SIMPLE){
+        listId = DEFAULT.LIST_NAME;
+      }
+
       const newState = JSON.parse(JSON.stringify(this.state));
 
       const id = '_' + Math.random().toString(36).substr(2, 9);
 
-      const newTodo = {
+      newState.todos[id] = {
         id,
         listId,
         name,
@@ -142,7 +167,6 @@ export class StoreProvider extends Component {
         timeCompleted: null
       }
 
-      newState.todos[id] = newTodo;
 
       if (listId && listId in newState.lists) {
         newState.lists[listId].todoIds.push(id);
@@ -152,14 +176,20 @@ export class StoreProvider extends Component {
       //TODO: not save the whole state (e.g. no need todoBeingEdited)
       this.storage.set(newState);
     },
-    addList: () => {
+    addList: (specialId = false) => {
       const newState = JSON.parse(JSON.stringify(this.state));
 
-      const id = '_' + Math.random().toString(36).substr(2, 9);
+      let id = '_' + Math.random().toString(36).substr(2, 9);
+      let name = '';
 
-      const newList = {
+      if (specialId) {
+        id = specialId;
+        name = specialId;
+      }
+
+      let newList = {
         id,
-        name: '',
+        name: name,
         todoIds: []
       }
 

@@ -1,7 +1,9 @@
 import styled from 'styled-components';
 
-export const Clock = styled.div`
+
+export const TodoInputWrapper = styled.input`
     border: none;
+    outline: none;
     padding: 0 0 2px;
     color: ${({textColor}) => textColor};
     border-bottom: 2px solid ${({borderColor}) => borderColor};
@@ -13,4 +15,8 @@ export const Clock = styled.div`
     &:hover{
         cursor: default;
     }
+    &::-webkit-input-placeholder{
+        color: ${({theme}) => theme.inputPlaceholder};
+    }
+    background-color: transparent;
 `;

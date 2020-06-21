@@ -6,7 +6,7 @@ import { GlobalStyle } from './App.style';
 import SideMenu from './containers/SideMenu';
 import ItemsContainer from './containers/ItemsContainer';
 import { SettingsIcon } from './components/Icons';
-import Clock from './components/Clock';
+import TodoInput from './components/Clock';
 import CalendarModal from './components/CalendarModal';
 // store
 import { withStore } from './store';
@@ -14,7 +14,7 @@ import { withStore } from './store';
 const App = ({
   sidebarOpen, setSidebarOpen,
   calendarModalOpen, setCalendarModalOpen, setTodoDueDate,
-  theme
+  theme, version
 }) => (
     <Sidebar
       sidebar={
@@ -51,7 +51,7 @@ const App = ({
         />
 
         {/* Main app */}
-        <Clock/>
+        <TodoInput/>
         <ItemsContainer />
 
       </div>

@@ -5,7 +5,7 @@ import { Droppable, Draggable } from 'react-beautiful-dnd';
 import { withStore } from '../../store';
 import { ArrowIcon, DeleteIcon, EditIcon, PlusIcon } from '../../components/Icons';
 import { ListWrapper, ListNameWrapper, SideMenu, ListHeader, ListInput, ListText } from './list.style';
-import { FILTER_OPTIONS } from '../../constants/enums';
+import {FILTER_OPTIONS, VERSION} from '../../constants/enums';
 import moment from 'moment';
 
 class List extends Component {
@@ -27,6 +27,7 @@ class List extends Component {
 
   renderListName() {
     const { name, theme } = this.props;
+
     return (
       this.props.name === '' || this.state.isEditing ?
         (
@@ -63,7 +64,7 @@ class List extends Component {
   }
 
   render() {
-    const { id, index, todoIds, todos, theme, addTodo, deleteList } = this.props;
+    const { id, index, todoIds, todos, theme, addTodo, deleteList, version } = this.props;
     const hideCompleted = this.props.todoSettings.hideCompleted.value;
     const filterByDuedate = this.props.todoSettings.filterByDuedate.value;
 
@@ -77,7 +78,7 @@ class List extends Component {
               ref={provided.innerRef}
               borderColor={theme.border}
             >
-              <ListHeader
+              <ListHeader className={version === VERSION.SIMPLE && 'hidden'}
                 onClick={() => this.setState(({ isExpanded }) => ({ isExpanded: !isExpanded }))}
                 onMouseOver={() => this.setState({ showSideMenu: true })}
                 onMouseLeave={() => this.setState({ showSideMenu: false })}
@@ -142,7 +143,7 @@ class List extends Component {
                             if(todo.daysOfWeek.includes(true)){
                               daysTillNextRecurringDay = todo.daysOfWeek.indexOf(true,now.day()) - now.day();
                             }
-                            
+
                             const daysTillNext = Math.min(daysTillDueDate, daysTillNextRecurringDay);
 
                             switch (filterByDuedate) {

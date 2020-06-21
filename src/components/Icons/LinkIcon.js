@@ -15,6 +15,9 @@ const LinkIconWrapper = styled.div`
   &:hover svg{
     fill: ${({hoverIconColor}) => hoverIconColor}
   }
+  &.hidden{
+    display: none;
+  }
 `;
 
 /**

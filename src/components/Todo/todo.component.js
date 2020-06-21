@@ -9,6 +9,7 @@ import { Checkbox, DaySelector, AddLinkButton, LinkButton } from './subcomponent
 import { Body, CheckboxWrapper, TodoWrapper, TodoText, TodoInput, DuedateWrapper, TodoFooterWrapper, ButtonsWrapper, ArrowIconWrapper } from './todo.style';
 // store
 import { withStore } from '../../store';
+import {VERSION} from '../../constants/enums';
 
 // helper functions
 function formatDate(msSince1970) {
@@ -99,7 +100,14 @@ class Todo extends Component {
       deleteTodo,
       setTodoBeingEdited,
       setCalendarModalOpen,
+      version
     } = this.props;
+
+    let versionClass = '';
+
+    if(version === VERSION.SIMPLE){
+      versionClass = 'hidden';
+    }
 
     return (
       <Draggable draggableId={id} index={index}>
@@ -143,6 +151,7 @@ class Todo extends Component {
                 <TodoFooterWrapper>
                   <DaySelector
                     id={id}
+                    className={versionClass}
                     defaultIconColor={theme.icon.default}
                     hoverIconColor={theme.icon.hover}
                     selectedIconColor={theme.icon.selected}
@@ -150,7 +159,7 @@ class Todo extends Component {
                     toggleTodoDayOfWeek={toggleTodoDayOfWeek}
                   />
                   <ButtonsWrapper>
-                    <AddLinkButton
+                    <AddLinkButton className={versionClass}
                       id={id}
                       link={link}
                       size={16}
@@ -161,7 +170,7 @@ class Todo extends Component {
                       tooltipPlaceholderColor={theme.tooltip.placeholder}
                       tooltipTextColor={theme.tooltip.text}
                     />
-                    <CalendarIcon
+                    <CalendarIcon className={versionClass}
                       defaultIconColor={theme.icon.default}
                       hoverIconColor={theme.icon.hover}
                       onClick={() => { setTodoBeingEdited(id); setCalendarModalOpen(true); }}

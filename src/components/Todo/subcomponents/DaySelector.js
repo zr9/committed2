@@ -17,6 +17,11 @@ const Day = styled.div`
         cursor: pointer;
         color: ${({hoverIconColor}) => hoverIconColor}
     }
+    
+    
+    &.hidden{
+        display: none;
+    }
 `;
 
 const DAYS_OF_WEEK = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
