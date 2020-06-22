@@ -1,7 +1,10 @@
+/* global chrome */
+
 import React, { Component, createContext } from 'react';
 import StorageFactory from '../utils/storage';
-import {DEFAULT, FILTER_OPTIONS, STORAGE, VERSION} from '../constants/enums';
+import {DEFAULT, FILTER_OPTIONS, MESSAGES, ORIGIN, STORAGE, TIMEOUT, VERSION} from '../constants/enums';
 import THEMES from '../constants/themes';
+import {pubMessage} from '../utils/transport';
 
 export const StoreContext = createContext();
 
@@ -32,7 +35,14 @@ export class StoreProvider extends Component {
       hideCompleted: false,
       filterByDuedate: FILTER_OPTIONS.SHOW_ALL
     },
+    originListData: null,
+    originInList: null,
+    originOutList: null,
+    originSyncTimer: null,
+    originLastSyncTime: null,
+
     storage: STORAGE.LOCAL,
+    origin: ORIGIN.LOCAL,
     version: VERSION.EXTENDED,
 
     lastState: {}
@@ -108,6 +118,70 @@ export class StoreProvider extends Component {
       this.setState({version, lastState, listOrder});
       this.storage.set({ version, lastState, listOrder });
     },
+    setOrigin: async (originName) => {
+      this.setState({ origin: originName });
+      this.storage.set({ origin: originName });
+
+      if (originName !== ORIGIN.LOCAL){
+        if ( this.state.version !== VERSION.SIMPLE ) {
+          await this.appOperations.setVersion(VERSION.SIMPLE);
+        }
+
+        try {
+          const response = await pubMessage({type: 'retrieve_lists'})
+
+          this.setState({originListData: response});
+
+          if (this.state.originInList !== DEFAULT.LIST_NAME){
+            await this.appOperations.setOriginSyncTimer();
+          }
+        } catch (e) {
+          await this.appOperations.originRevertToLocal();
+        }
+      } else {
+        clearInterval(this.state.originSyncTimer);
+      }
+    },
+    setOriginInList: async (listName) => {
+      this.setState({originInList: listName});
+      this.storage.set({ originInList: listName });
+
+      await this.appOperations.originMsSyncList(listName);
+    },
+    originRevertToLocal: async () => {
+      await this.appOperations.setOrigin(ORIGIN.LOCAL)
+      alert(MESSAGES.INIT_FAILED);
+    },
+    setOriginOutList: (listName) => {
+      this.setState({originOutList: listName});
+      this.storage.set({ originOutList: listName });
+    },
+    setOriginSyncTimer: async () => {
+      clearInterval(this.state.originSyncTimer);
+
+      const now = new Date();
+      let originLastSyncTime;
+
+      if (!this.state.originLastSyncTime){
+        originLastSyncTime = now;
+      }else {
+        originLastSyncTime = new Date(this.state.originLastSyncTime);
+      }
+
+      const timeDiff = (now - originLastSyncTime);
+
+      if (timeDiff > TIMEOUT.SYNC){
+        originLastSyncTime = now;
+        await this.appOperations.originMsSyncList(this.state.originInList);
+      }
+
+      const originSyncTimer = setTimeout(async () => {
+        await this.appOperations.setOriginSyncTimer();
+      }, TIMEOUT.SYNC);
+
+      this.setState({originSyncTimer, originLastSyncTime});
+      this.storage.set({originSyncTimer, originLastSyncTime});
+    },
     setStorage: async (storageName) => {
       if (storageName !== STORAGE.LOCAL && storageName !== STORAGE.CHROME) throw new Error('storage can only be local or chrome, but got:', storageName);
       if (this.storage && storageName === this.state.storage) return;
@@ -136,6 +210,11 @@ export class StoreProvider extends Component {
           'clockSettings',
           'todoSettings',
           'version',
+          'origin',
+          'originListData',
+          'originInList',
+          'originOutList',
+          'originLastSyncTime'
         )
       });
 
@@ -143,6 +222,53 @@ export class StoreProvider extends Component {
         console.log('changes in store', changes);
         this.setState(changes);
       });
+
+      if (this.state.origin !== ORIGIN.LOCAL){
+        await pubMessage({
+          type: 'pass_settings',
+          message:{
+            origin: this.state.origin
+          }
+        });
+
+        try {
+          await this.appOperations.setOriginSyncTimer();
+        } catch (e) {
+          await this.appOperations.originRevertToLocal();
+        }
+      }
+    },
+    /*origin functions*/
+    originMsAddTask: (task, list, todoId) => {
+      pubMessage({type: 'add_task', message: {list: list, task}});
+
+      //NOTE: in case of ms lists mismatch delete new task only from local
+      if (list !== this.state.originInList){
+        const todos = JSON.parse(JSON.stringify(this.state.todos));
+
+        todos[todoId].timer = setTimeout(() => {
+          this.todosOperations.deleteTodo(todoId);
+        }, TIMEOUT.HIDE);
+
+        this.storage.set({ todos });
+      }
+    },
+    originMsTaskCompleted: (task, list, isCompleted) => {
+      pubMessage({type: 'complete_task', message: {list: list, task, isCompleted}});
+    },
+    originMsTaskUpdated: (task, list, newName) => {
+      pubMessage({type: 'update_task', message: {list: list, task, newName}});
+    },
+    originMsRemoveTask: (task, list) => {
+      pubMessage({type: 'remove_task', message: {list: list, task}});
+    },
+    originMsSyncList: async (listName) => {
+      const response = await pubMessage({
+        type: 'retrieve_tasks', message: {list: listName}
+      });
+
+      this.todosOperations.clearList(DEFAULT.LIST_NAME);
+      response.map(task => this.todosOperations.addTodo(task,DEFAULT.LIST_NAME));
     }
   }
 
@@ -167,14 +293,17 @@ export class StoreProvider extends Component {
         timeCompleted: null
       }
 
-
       if (listId && listId in newState.lists) {
         newState.lists[listId].todoIds.push(id);
       } else {
         newState.listOrder.push(id);
       }
       //TODO: not save the whole state (e.g. no need todoBeingEdited)
-      this.storage.set(newState);
+      await this.storage.set(newState);
+
+      if (includeOrigin) {
+        this.appOperations.originMsAddTask(name, this.state.originOutList, id);
+      }
     },
     addList: (specialId = false) => {
       const newState = JSON.parse(JSON.stringify(this.state));
@@ -205,6 +334,10 @@ export class StoreProvider extends Component {
 
       if (!(todoId in todos)) return;
 
+      if (this.state.origin === ORIGIN.MS){
+        this.appOperations.originMsTaskUpdated(todos[todoId].name, this.state.originInList, newTodoName.trim());
+      }
+
       todos[todoId].name = newTodoName.trim();
 
       this.storage.set({ todos });
@@ -222,6 +355,10 @@ export class StoreProvider extends Component {
       const todos = JSON.parse(JSON.stringify(this.state.todos));
 
       if (!(todoId in todos)) return;
+
+      if (this.state.origin === ORIGIN.MS){
+        this.appOperations.originMsTaskCompleted(todos[todoId].name, this.state.originInList, completed);
+      }
 
       clearTimeout(todos[todoId].timer);
 
@@ -248,11 +385,15 @@ export class StoreProvider extends Component {
 
       this.storage.set({ todos });
     },
-    deleteTodo: (todoId) => {
+    deleteTodo: (todoId, deleteFromOrigin = false) => {
       const newState = JSON.parse(JSON.stringify(this.state));
       const { todos, lists, listOrder } = newState;
 
       if (!(todoId in todos)) return;
+
+      if(deleteFromOrigin){
+        this.appOperations.originMsRemoveTask(todos[todoId].name, this.state.originInList);
+      }
 
       delete todos[todoId];
 
@@ -266,6 +407,17 @@ export class StoreProvider extends Component {
           break;
         }
       }
+
+      this.storage.set(newState);
+    },
+    clearList: (listId) => {
+      const newState = JSON.parse(JSON.stringify(this.state));
+      const { todos, lists } = newState;
+
+      if (!(listId in lists)) return;
+
+      lists[listId].todoIds.forEach(todoId => delete todos[todoId]);
+      lists[listId].todoIds = [];
 
       this.storage.set(newState);
     },

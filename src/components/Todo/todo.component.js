@@ -9,7 +9,7 @@ import { Checkbox, DaySelector, AddLinkButton, LinkButton } from './subcomponent
 import { Body, CheckboxWrapper, TodoWrapper, TodoText, TodoInput, DuedateWrapper, TodoFooterWrapper, ButtonsWrapper, ArrowIconWrapper } from './todo.style';
 // store
 import { withStore } from '../../store';
-import {VERSION} from '../../constants/enums';
+import {ORIGIN, VERSION} from '../../constants/enums';
 
 // helper functions
 function formatDate(msSince1970) {
@@ -100,10 +100,13 @@ class Todo extends Component {
       deleteTodo,
       setTodoBeingEdited,
       setCalendarModalOpen,
+      setTodoUpdated,
+      origin,
       version
     } = this.props;
 
     let versionClass = '';
+    const removeFromOrigin = origin === ORIGIN.MS;
 
     if(version === VERSION.SIMPLE){
       versionClass = 'hidden';
@@ -178,7 +181,7 @@ class Todo extends Component {
                     <DeleteIcon
                       defaultIconColor={theme.icon.default}
                       hoverIconColor={theme.icon.hover}
-                      onClick={() => deleteTodo(id)}
+                      onClick={() => deleteTodo(id, removeFromOrigin)}
                     />
                   </ButtonsWrapper>
                 </TodoFooterWrapper>

@@ -63,4 +63,8 @@ export const TodoWrapper = styled.div`
   flex: 1;
   min-height: 25px;
   overflow: scroll;
+  
+  &.completed{
+    text-decoration: line-through;
+  }
 `;
