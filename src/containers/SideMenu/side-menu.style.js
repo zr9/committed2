@@ -6,7 +6,8 @@ export const SideMenuWrapper = styled.div`
     display: flex;
     flex-direction: column;
     background: white;
-    height:100%;
+    min-height:100%;
+    height:auto;
 `;
 
 export const Header = styled.div`

@@ -6,7 +6,7 @@ const DevFoxIconWrapper = styled.div`
     height: 28px;
     width: 28px;
     position: fixed;
-    bottom: 10px;
+    top: 10px;
     right: 10px;
     & svg {
         fill: lightgray
