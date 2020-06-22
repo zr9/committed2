@@ -223,8 +223,18 @@ export class StoreProvider extends Component {
 
       if (!(todoId in todos)) return;
 
+      clearTimeout(todos[todoId].timer);
+
       todos[todoId].completed = completed;
       todos[todoId].timeCompleted = completed ? (new Date()).getTime() : null;
+
+      this.storage.set({ todos });
+
+      //NOTE: timeout for hide, against accidental click
+      todos[todoId].timer = setTimeout(() => {
+        todos[todoId].hidden = completed;
+        this.storage.set({ todos });
+      }, TIMEOUT.HIDE);
 
       this.storage.set({ todos });
     },

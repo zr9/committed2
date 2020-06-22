@@ -125,12 +125,12 @@ class List extends Component {
                         this.state.isExpanded &&
                         todoIds
                           .map(todoId => todos[todoId])
-                          .filter(todo => hideCompleted ? !todo.completed : true)
+                          .filter(todo => hideCompleted ? !todo.hidden : true)
                           .filter(todo => {
                             if(filterByDuedate === FILTER_OPTIONS.SHOW_ALL) return true;
 
                             if(!todo.dueDate && !todo.daysOfWeek.includes(true)) return true;
-                            
+
                             const now = moment().startOf('day');
 
                             let daysTillDueDate = Number.MAX_SAFE_INTEGER;

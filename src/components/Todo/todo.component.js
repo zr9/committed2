@@ -132,7 +132,7 @@ class Todo extends Component {
                     onClick={(e) => {e.stopPropagation(); setTodoCompleted(id, !completed);}}
                   />
                 </CheckboxWrapper>
-                <TodoWrapper>
+                <TodoWrapper className={completed && 'completed'}>
                   {this.renderTodoText()}
                 </TodoWrapper>
                   <ArrowIconWrapper>
